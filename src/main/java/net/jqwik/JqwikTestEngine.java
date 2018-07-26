@@ -38,8 +38,15 @@ public class JqwikTestEngine implements TestEngine {
 	@Override
 	public void execute(ExecutionRequest request) {
 		TestDescriptor root = request.getRootTestDescriptor();
+
+		// TODO: Replace by AroundRunLifecycleHook call
+		Stores.currentEngineDescriptor = root;
+
 		registerLifecycleHooks(root);
 		executeTests(root, request.getEngineExecutionListener());
+
+		// TODO: Replace by AroundRunLifecycleHook call
+		Stores.currentEngineDescriptor = null;
 	}
 
 	private void executeTests(TestDescriptor root, EngineExecutionListener listener) {
