@@ -1,13 +1,16 @@
 package net.jqwik.execution;
 
+import java.io.*;
 import java.util.*;
 
 import org.junit.platform.engine.*;
 import org.junit.platform.engine.reporting.*;
 
 import net.jqwik.api.*;
+import net.jqwik.descriptor.*;
 import net.jqwik.properties.*;
 import net.jqwik.recording.*;
+import net.jqwik.support.*;
 
 public class RecordingExecutionListener implements EngineExecutionListener {
 
@@ -40,6 +43,17 @@ public class RecordingExecutionListener implements EngineExecutionListener {
 	@Override
 	public void executionFinished(TestDescriptor testDescriptor, TestExecutionResult testExecutionResult) {
 		recordTestRun(testDescriptor, testExecutionResult);
+//		if (testExecutionResult.getStatus() == TestExecutionResult.Status.FAILED && testDescriptor instanceof PropertyMethodDescriptor) {
+//			PropertyMethodDescriptor methodDescriptor = (PropertyMethodDescriptor) testDescriptor;
+//			UniqueId id = methodDescriptor.getUniqueId().append("failed", "shrinkedExample");
+//			PropertyMethodDescriptor failingDescriptor = new PropertyMethodDescriptor(
+//				id, methodDescriptor.getTargetMethod(), methodDescriptor.getContainerClass(), methodDescriptor.getConfiguration());
+//			testDescriptor.addChild(failingDescriptor);
+//			listener.dynamicTestRegistered(failingDescriptor);
+//			listener.executionStarted(failingDescriptor);
+//			listener.executionFinished(failingDescriptor, TestExecutionResult.failed(null));
+//		}
+
 		listener.executionFinished(testDescriptor, testExecutionResult);
 	}
 
@@ -53,10 +67,34 @@ public class RecordingExecutionListener implements EngineExecutionListener {
 	public void reportingEntryPublished(TestDescriptor testDescriptor, ReportEntry entry) {
 		rememberSeed(testDescriptor, entry);
 
+		if (entry.getKeyValuePairs().containsKey("sample-serialized")) {
+
+			String serialized = entry.getKeyValuePairs().get("sample-serialized");
+			System.out.println("SERIALIZED: " + JqwikStringSupport.displayString(fromString(serialized)));
+
+			return;
+		}
+
 		if (useJunitPlatformReporter) {
 			listener.reportingEntryPublished(testDescriptor, entry);
 		} else {
 			ReportEntrySupport.printToStdout(testDescriptor, entry);
+		}
+	}
+
+	private static List fromString( String s ) {
+		try {
+			byte[] data = Base64.getDecoder().decode(s);
+			ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
+			List o = (List) ois.readObject();
+			ois.close();
+			return o;
+		} catch (IOException io) {
+			io.printStackTrace();
+			return null;
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			return null;
 		}
 	}
 

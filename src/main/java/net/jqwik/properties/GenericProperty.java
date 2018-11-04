@@ -1,5 +1,6 @@
 package net.jqwik.properties;
 
+import java.io.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -49,6 +50,26 @@ public class GenericProperty {
 	private void reportResult(Consumer<ReportEntry> publisher, PropertyCheckResult checkResult) {
 		if (checkResult.countTries() > 1 || checkResult.status() != SATISFIED)
 			publisher.accept(CheckResultReportEntry.from(checkResult));
+		if (checkResult.sample().isPresent()) {
+			List params = checkResult.sample().get();
+			if (params instanceof Serializable) {
+				String serialized = serialize(params);
+				publisher.accept(ReportEntry.from("sample-serialized", serialized));
+			}
+		}
+	}
+
+	private String serialize(List params) {
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(baos);
+			oos.writeObject(params);
+			oos.close();
+			return Base64.getEncoder().encodeToString(baos.toByteArray());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	private PropertyCheckResult checkWithoutReporting(Consumer<ReportEntry> reporter, Reporting[] reporting) {
