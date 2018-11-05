@@ -43,16 +43,18 @@ public class RecordingExecutionListener implements EngineExecutionListener {
 	@Override
 	public void executionFinished(TestDescriptor testDescriptor, TestExecutionResult testExecutionResult) {
 		recordTestRun(testDescriptor, testExecutionResult);
-//		if (testExecutionResult.getStatus() == TestExecutionResult.Status.FAILED && testDescriptor instanceof PropertyMethodDescriptor) {
-//			PropertyMethodDescriptor methodDescriptor = (PropertyMethodDescriptor) testDescriptor;
-//			UniqueId id = methodDescriptor.getUniqueId().append("failed", "shrinkedExample");
-//			PropertyMethodDescriptor failingDescriptor = new PropertyMethodDescriptor(
-//				id, methodDescriptor.getTargetMethod(), methodDescriptor.getContainerClass(), methodDescriptor.getConfiguration());
-//			testDescriptor.addChild(failingDescriptor);
-//			listener.dynamicTestRegistered(failingDescriptor);
-//			listener.executionStarted(failingDescriptor);
-//			listener.executionFinished(failingDescriptor, TestExecutionResult.failed(null));
-//		}
+		if (testExecutionResult.getStatus() == TestExecutionResult.Status.FAILED && testDescriptor instanceof PropertyMethodDescriptor) {
+			PropertyMethodDescriptor methodDescriptor = (PropertyMethodDescriptor) testDescriptor;
+			UniqueId id = methodDescriptor.getUniqueId().append("failed", "shrinkedExample");
+			PropertyMethodDescriptor failingDescriptor = new PropertyMethodDescriptor(
+				id, methodDescriptor.getTargetMethod(), methodDescriptor.getContainerClass(), methodDescriptor.getConfiguration()) {
+
+			};
+			testDescriptor.addChild(failingDescriptor);
+			listener.dynamicTestRegistered(failingDescriptor);
+			listener.executionStarted(failingDescriptor);
+			listener.executionFinished(failingDescriptor, TestExecutionResult.failed(null));
+		}
 
 		listener.executionFinished(testDescriptor, testExecutionResult);
 	}
